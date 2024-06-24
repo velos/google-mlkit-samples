@@ -21,6 +21,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
 import android.os.Build
+import android.util.Log
 import androidx.annotation.ColorInt
 import androidx.annotation.RequiresApi
 import com.google.mlkit.vision.demo.GraphicOverlay
@@ -28,6 +29,7 @@ import com.google.mlkit.vision.segmentation.subject.Subject
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmentationResult
 import java.nio.FloatBuffer
 import kotlin.collections.List
+import kotlin.math.min
 
 /** Draw the mask from [SubjectSegmentationResult] in preview. */
 @RequiresApi(Build.VERSION_CODES.N)
@@ -68,7 +70,11 @@ class SubjectSegmentationGraphic(
    */
   @ColorInt
   private fun maskColorsFromFloatBuffer(): IntArray {
-    @ColorInt val colors = IntArray(imageWidth * imageHeight)
+    val colorArray = arrayListOf<IntArray>()
+    for (i in 0 until imageWidth) {
+      colorArray.add(IntArray(imageHeight))
+    }
+
     for (k in 0 until subjects.size) {
       val subject = subjects[k]
       val rgb = COLORS[k % COLORS.size]
@@ -76,8 +82,10 @@ class SubjectSegmentationGraphic(
       val mask = subject.confidenceMask
       for (j in 0 until subject.height) {
         for (i in 0 until subject.width) {
-          if (mask!!.get() > 0.5) {
-            colors[(subject.startY + j) * imageWidth + subject.startX + i] = color
+          if (mask!!.get() > 0.3) {
+            val x = subject.startX + i
+            val y = subject.startY + j
+            colorArray[x][y] = color
           }
         }
       }
@@ -85,6 +93,17 @@ class SubjectSegmentationGraphic(
       // refreshed
       mask!!.rewind()
     }
+
+    @ColorInt val colors = IntArray(imageWidth * imageHeight)
+    var index = 0
+    for (y in 0 until imageHeight) {
+      for (x in 0 until imageWidth) {
+        val col = colorArray[x]
+        colors[index] = col[y]
+        index++
+      }
+    }
+
     return colors
   }
 

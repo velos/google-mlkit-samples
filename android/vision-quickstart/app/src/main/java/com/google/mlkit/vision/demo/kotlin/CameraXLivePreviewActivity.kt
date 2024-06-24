@@ -17,6 +17,7 @@
 package com.google.mlkit.vision.demo.kotlin
 
 import android.content.Intent
+import android.os.Build
 import android.os.Build.VERSION_CODES
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -57,6 +58,7 @@ import com.google.mlkit.vision.demo.kotlin.labeldetector.LabelDetectorProcessor
 import com.google.mlkit.vision.demo.kotlin.objectdetector.ObjectDetectorProcessor
 import com.google.mlkit.vision.demo.kotlin.posedetector.PoseDetectorProcessor
 import com.google.mlkit.vision.demo.kotlin.segmenter.SegmenterProcessor
+import com.google.mlkit.vision.demo.kotlin.subjectsegmenter.SubjectSegmenterProcessor
 import com.google.mlkit.vision.demo.kotlin.textdetector.TextRecognitionProcessor
 import com.google.mlkit.vision.demo.preference.PreferenceUtils
 import com.google.mlkit.vision.demo.preference.SettingsActivity
@@ -121,6 +123,7 @@ class CameraXLivePreviewActivity :
     options.add(TEXT_RECOGNITION_JAPANESE)
     options.add(TEXT_RECOGNITION_KOREAN)
     options.add(FACE_MESH_DETECTION)
+    options.add(SUBJECT_SEGMENTATION)
 
     // Creating adapter for spinner
     val dataAdapter = ArrayAdapter(this, R.layout.spinner_style, options)
@@ -360,6 +363,12 @@ class CameraXLivePreviewActivity :
           }
           SELFIE_SEGMENTATION -> SegmenterProcessor(this)
           FACE_MESH_DETECTION -> FaceMeshDetectorProcessor(this)
+          SUBJECT_SEGMENTATION ->
+            if (Build.VERSION.SDK_INT >= VERSION_CODES.N) {
+              SubjectSegmenterProcessor(this)
+            } else {
+              throw IllegalStateException("VERSION.SDK_INT < N")
+            }
           else -> throw IllegalStateException("Invalid model name")
         }
       } catch (e: Exception) {
@@ -426,6 +435,7 @@ class CameraXLivePreviewActivity :
     private const val POSE_DETECTION = "Pose Detection"
     private const val SELFIE_SEGMENTATION = "Selfie Segmentation"
     private const val FACE_MESH_DETECTION = "Face Mesh Detection (Beta)"
+    private const val SUBJECT_SEGMENTATION = "Subject Segmentation (Beta)"
 
     private const val STATE_SELECTED_MODEL = "selected_model"
   }
