@@ -40,9 +40,7 @@ class SubjectSegmenterProcessor : VisionProcessorBase<SubjectSegmentationResult>
     subjectSegmenter =
       SubjectSegmentation.getClient(
         SubjectSegmenterOptions.Builder()
-          .enableMultipleSubjects(
-            SubjectSegmenterOptions.SubjectResultOptions.Builder().enableConfidenceMask().build()
-          )
+          .enableForegroundConfidenceMask()
           .build()
       )
 

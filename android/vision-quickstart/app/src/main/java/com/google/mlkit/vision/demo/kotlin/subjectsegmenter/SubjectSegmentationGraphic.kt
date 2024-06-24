@@ -39,7 +39,7 @@ class SubjectSegmentationGraphic(
   imageWidth: Int,
   imageHeight: Int
 ) : GraphicOverlay.Graphic(overlay) {
-  private val subjects: List<Subject>
+  private val mask: FloatBuffer?
   private val imageWidth: Int
   private val imageHeight: Int
   private val isRawSizeMaskEnabled: Boolean
@@ -75,24 +75,18 @@ class SubjectSegmentationGraphic(
       colorArray.add(IntArray(imageHeight))
     }
 
-    for (k in 0 until subjects.size) {
-      val subject = subjects[k]
-      val rgb = COLORS[k % COLORS.size]
-      val color = Color.argb(128, rgb[0], rgb[1], rgb[2])
-      val mask = subject.confidenceMask
-      for (j in 0 until subject.height) {
-        for (i in 0 until subject.width) {
-          if (mask!!.get() > 0.3) {
-            val x = subject.startX + i
-            val y = subject.startY + j
-            colorArray[x][y] = color
-          }
+    val color = Color.argb(128, 255, 255, 0)
+
+    for (y in 0 until imageHeight) {
+      for (x in 0 until imageWidth) {
+        if (mask!!.get() > 0.3) {
+          colorArray[x][y] = color
         }
       }
-      // Reset [FloatBuffer] pointer to beginning, so that the mask can be redrawn if screen is
-      // refreshed
-      mask!!.rewind()
     }
+    // Reset [FloatBuffer] pointer to beginning, so that the mask can be redrawn if screen is
+    // refreshed
+    mask!!.rewind()
 
     @ColorInt val colors = IntArray(imageWidth * imageHeight)
     var index = 0
@@ -108,7 +102,7 @@ class SubjectSegmentationGraphic(
   }
 
   init {
-    subjects = segmentationResult.subjects
+    mask = segmentationResult.foregroundConfidenceMask!!
     this.imageWidth = imageWidth
     this.imageHeight = imageHeight
 
