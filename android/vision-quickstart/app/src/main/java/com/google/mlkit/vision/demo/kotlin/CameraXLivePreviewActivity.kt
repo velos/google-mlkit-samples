@@ -20,6 +20,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Build.VERSION_CODES
 import android.os.Bundle
+import android.os.PersistableBundle
 import androidx.appcompat.app.AppCompatActivity
 import android.util.Log
 import android.view.View
@@ -70,6 +71,7 @@ import com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions
 import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
 import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import org.opencv.android.OpenCVLoader
 
 /** Live preview demo app for ML Kit APIs using CameraX. */
 @KeepName
@@ -92,6 +94,15 @@ class CameraXLivePreviewActivity :
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     Log.d(TAG, "onCreate")
+
+    if (OpenCVLoader.initLocal()) {
+      Log.i(TAG, "OpenCV loaded successfully")
+    } else {
+      Log.e(TAG, "OpenCV initialization failed!")
+      Toast.makeText(this, "OpenCV initialization failed!", Toast.LENGTH_LONG)
+        .show()
+    }
+
     if (savedInstanceState != null) {
       selectedModel = savedInstanceState.getString(STATE_SELECTED_MODEL, OBJECT_DETECTION)
     }

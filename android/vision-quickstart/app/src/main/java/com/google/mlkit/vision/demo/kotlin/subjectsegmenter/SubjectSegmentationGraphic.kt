@@ -25,21 +25,24 @@ import android.util.Log
 import androidx.annotation.ColorInt
 import androidx.annotation.RequiresApi
 import com.google.mlkit.vision.demo.GraphicOverlay
+import com.google.mlkit.vision.demo.kotlin.subjectsegmenter.opencv.OpenCvDocumentDetector
 import com.google.mlkit.vision.segmentation.subject.Subject
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmentationResult
 import java.nio.FloatBuffer
 import kotlin.collections.List
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 /** Draw the mask from [SubjectSegmentationResult] in preview. */
 @RequiresApi(Build.VERSION_CODES.N)
 class SubjectSegmentationGraphic(
+  openCvDocumentDetector: OpenCvDocumentDetector,
   overlay: GraphicOverlay,
   segmentationResult: SubjectSegmentationResult,
   imageWidth: Int,
   imageHeight: Int
 ) : GraphicOverlay.Graphic(overlay) {
-  private val mask: FloatBuffer?
+  private val colorMask: IntArray
   private val imageWidth: Int
   private val imageHeight: Int
   private val isRawSizeMaskEnabled: Boolean
@@ -50,7 +53,7 @@ class SubjectSegmentationGraphic(
   override fun draw(canvas: Canvas) {
     val bitmap =
       Bitmap.createBitmap(
-        maskColorsFromFloatBuffer(),
+        colorMask,
         imageWidth,
         imageHeight,
         Bitmap.Config.ARGB_8888
@@ -65,44 +68,58 @@ class SubjectSegmentationGraphic(
     bitmap.recycle()
   }
 
-  /**
-   * Converts [FloatBuffer] floats from all subjects to ColorInt array that can be used as a mask.
-   */
-  @ColorInt
-  private fun maskColorsFromFloatBuffer(): IntArray {
-    val colorArray = arrayListOf<IntArray>()
+  private fun detectContours(subjectMask: ArrayList<IntArray>): ArrayList<IntArray> {
+    return subjectMask
+  }
+
+  private fun getSubjectMask(confidenceMask: FloatBuffer): ArrayList<IntArray> {
+    val foregroundMask = arrayListOf<IntArray>()
+
     for (i in 0 until imageWidth) {
-      colorArray.add(IntArray(imageHeight))
+      foregroundMask.add(IntArray(imageHeight))
     }
-
-    val color = Color.argb(128, 255, 255, 0)
-
     for (y in 0 until imageHeight) {
       for (x in 0 until imageWidth) {
-        if (mask!!.get() > 0.3) {
-          colorArray[x][y] = color
-        }
+          foregroundMask[x][y] = (confidenceMask.get() * 255).roundToInt()
       }
     }
-    // Reset [FloatBuffer] pointer to beginning, so that the mask can be redrawn if screen is
-    // refreshed
-    mask!!.rewind()
 
-    @ColorInt val colors = IntArray(imageWidth * imageHeight)
+    confidenceMask.rewind()
+
+    return foregroundMask
+  }
+
+  private fun convertForegroundMaskToColorMask(mask: ArrayList<IntArray>): IntArray {
+    val array = IntArray(imageWidth * imageHeight)
     var index = 0
     for (y in 0 until imageHeight) {
       for (x in 0 until imageWidth) {
-        val col = colorArray[x]
-        colors[index] = col[y]
+        val col = mask[x]
+        array[index] = col[y]
         index++
       }
     }
 
-    return colors
+    return array
+  }
+
+  /**
+   * Converts [FloatBuffer] floats from all subjects to ColorInt array that can be used as a mask.
+   */
+  @ColorInt
+  private fun maskColorsFromFloatBuffer(confidenceMask: FloatBuffer): IntArray {
+    val colorArray = convertForegroundMaskToColorMask(
+      getSubjectMask(confidenceMask)
+    )
+
+    colorArray.forEachIndexed { index, i ->
+      colorArray[index] = Color.argb(i, 255, 255, 0)
+    }
+
+    return colorArray
   }
 
   init {
-    mask = segmentationResult.foregroundConfidenceMask!!
     this.imageWidth = imageWidth
     this.imageHeight = imageHeight
 
@@ -110,6 +127,8 @@ class SubjectSegmentationGraphic(
       imageWidth != overlay.imageWidth || imageHeight != overlay.imageHeight
     scaleX = overlay.imageWidth * 1f / imageWidth
     scaleY = overlay.imageHeight * 1f / imageHeight
+
+    colorMask = maskColorsFromFloatBuffer(segmentationResult.foregroundConfidenceMask!!)
   }
 
   companion object {

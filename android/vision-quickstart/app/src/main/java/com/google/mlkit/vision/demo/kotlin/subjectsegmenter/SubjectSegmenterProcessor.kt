@@ -24,6 +24,7 @@ import com.google.android.gms.tasks.Task
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.demo.GraphicOverlay
 import com.google.mlkit.vision.demo.kotlin.VisionProcessorBase
+import com.google.mlkit.vision.demo.kotlin.subjectsegmenter.opencv.OpenCvDocumentDetector
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmentation
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmentationResult
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmenter
@@ -33,6 +34,7 @@ import com.google.mlkit.vision.segmentation.subject.SubjectSegmenterOptions
 @RequiresApi(Build.VERSION_CODES.N)
 class SubjectSegmenterProcessor : VisionProcessorBase<SubjectSegmentationResult> {
   private val subjectSegmenter: SubjectSegmenter
+  private val openCvDocumentDetector: OpenCvDocumentDetector
   private var imageWidth: Int = 0
   private var imageHeight: Int = 0
 
@@ -44,7 +46,15 @@ class SubjectSegmenterProcessor : VisionProcessorBase<SubjectSegmentationResult>
           .build()
       )
 
+    openCvDocumentDetector = OpenCvDocumentDetector()
+    openCvDocumentDetector.initialize()
+
     Log.d(TAG, "SubjectSegmenterProcessor created")
+  }
+
+  override fun stop() {
+    super.stop()
+    openCvDocumentDetector.release()
   }
 
   override fun detectInImage(image: InputImage): Task<SubjectSegmentationResult> {
@@ -58,7 +68,13 @@ class SubjectSegmenterProcessor : VisionProcessorBase<SubjectSegmentationResult>
     graphicOverlay: GraphicOverlay
   ) {
     graphicOverlay.add(
-      SubjectSegmentationGraphic(graphicOverlay, results, imageWidth, imageHeight)
+      SubjectSegmentationGraphic(
+        openCvDocumentDetector,
+        graphicOverlay,
+        results,
+        imageWidth,
+        imageHeight
+      )
     )
   }
 
