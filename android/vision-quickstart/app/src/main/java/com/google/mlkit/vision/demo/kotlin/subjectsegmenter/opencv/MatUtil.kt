@@ -29,3 +29,26 @@ fun hypotenuse(a: Double, b: Double): Double =
 
 fun hypotenuse(a: Float, b: Float): Float =
     sqrt(a.pow(2) + b.pow(2))
+
+fun Array<IntArray>.toMat(): Mat {
+    val cols = size
+    val rows = first().size
+    val mat = Mat(rows, cols, CvType.CV_8UC1)
+
+    (0 until cols).forEach { y ->
+        val col = this[y]
+        (0 until rows).forEach { x ->
+            val byteArray = byteArrayOf(col[x].toByte())
+            mat.put(x, y, byteArray)
+        }
+    }
+
+    return mat
+}
+
+
+fun MatOfPoint.toArrayList(): Array<IntArray> {
+    return (0 until rows()).map { row ->
+        intArrayOf(0, 0).apply { get(row, 0, this) }
+    }.toTypedArray()
+}

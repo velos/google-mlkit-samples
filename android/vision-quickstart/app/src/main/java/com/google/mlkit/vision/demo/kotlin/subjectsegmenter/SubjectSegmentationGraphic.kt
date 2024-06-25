@@ -36,13 +36,15 @@ import kotlin.math.roundToInt
 /** Draw the mask from [SubjectSegmentationResult] in preview. */
 @RequiresApi(Build.VERSION_CODES.N)
 class SubjectSegmentationGraphic(
-  openCvDocumentDetector: OpenCvDocumentDetector,
+  private val openCvDocumentDetector: OpenCvDocumentDetector,
   overlay: GraphicOverlay,
   segmentationResult: SubjectSegmentationResult,
   imageWidth: Int,
   imageHeight: Int
 ) : GraphicOverlay.Graphic(overlay) {
   private val colorMask: IntArray
+  private val contourPoints: Array<IntArray>
+
   private val imageWidth: Int
   private val imageHeight: Int
   private val isRawSizeMaskEnabled: Boolean
@@ -54,6 +56,7 @@ class SubjectSegmentationGraphic(
     val bitmap =
       Bitmap.createBitmap(
         colorMask,
+//        contourPointsToBitmapMask(contourPoints),
         imageWidth,
         imageHeight,
         Bitmap.Config.ARGB_8888
@@ -68,19 +71,21 @@ class SubjectSegmentationGraphic(
     bitmap.recycle()
   }
 
-  private fun detectContours(subjectMask: ArrayList<IntArray>): ArrayList<IntArray> {
-    return subjectMask
+  private fun detectContours(subjectMask: Array<IntArray>): Array<IntArray> {
+    val contourPoints = openCvDocumentDetector(subjectMask) ?: emptyArray()
+    Log.d(TAG, "contourPoints: ${contourPoints.joinToString { "(${it[0]}, ${it[1]})" }}")
+
+    return contourPoints
   }
 
-  private fun getSubjectMask(confidenceMask: FloatBuffer): ArrayList<IntArray> {
-    val foregroundMask = arrayListOf<IntArray>()
+  private fun getSubjectMask(confidenceMask: FloatBuffer): Array<IntArray> {
+    val foregroundMask = (0 until imageWidth)
+      .map { IntArray(imageHeight) }
+      .toTypedArray()
 
-    for (i in 0 until imageWidth) {
-      foregroundMask.add(IntArray(imageHeight))
-    }
     for (y in 0 until imageHeight) {
       for (x in 0 until imageWidth) {
-          foregroundMask[x][y] = (confidenceMask.get() * 255).roundToInt()
+        foregroundMask[x][y] = (confidenceMask.get() * 255).roundToInt()
       }
     }
 
@@ -89,7 +94,7 @@ class SubjectSegmentationGraphic(
     return foregroundMask
   }
 
-  private fun convertForegroundMaskToColorMask(mask: ArrayList<IntArray>): IntArray {
+  private fun convertForegroundMaskToColorMask(mask: Array<IntArray>): IntArray {
     val array = IntArray(imageWidth * imageHeight)
     var index = 0
     for (y in 0 until imageHeight) {
@@ -98,6 +103,17 @@ class SubjectSegmentationGraphic(
         array[index] = col[y]
         index++
       }
+    }
+
+    return array
+  }
+
+  private fun contourPointsToBitmapMask(contourPoints: Array<IntArray>): IntArray {
+    val array = IntArray(imageWidth * imageHeight)
+
+    contourPoints.forEach { point ->
+      val index = point[0] * imageHeight + point[1]
+      array[index] = Color.argb(128, 255, 0, 0)
     }
 
     return array
@@ -128,24 +144,13 @@ class SubjectSegmentationGraphic(
     scaleX = overlay.imageWidth * 1f / imageWidth
     scaleY = overlay.imageHeight * 1f / imageHeight
 
+    contourPoints = detectContours(
+      getSubjectMask(segmentationResult.foregroundConfidenceMask!!)
+    )
     colorMask = maskColorsFromFloatBuffer(segmentationResult.foregroundConfidenceMask!!)
   }
 
   companion object {
-    private val COLORS =
-      arrayOf(
-        intArrayOf(255, 0, 255),
-        intArrayOf(0, 255, 255),
-        intArrayOf(255, 255, 0),
-        intArrayOf(255, 0, 0),
-        intArrayOf(0, 255, 0),
-        intArrayOf(0, 0, 255),
-        intArrayOf(128, 0, 128),
-        intArrayOf(0, 128, 128),
-        intArrayOf(128, 128, 0),
-        intArrayOf(128, 0, 0),
-        intArrayOf(0, 128, 0),
-        intArrayOf(0, 0, 128)
-      )
+    private const val TAG = "SubjectSegmentationGfx"
   }
 }
