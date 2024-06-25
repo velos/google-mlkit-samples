@@ -3,10 +3,11 @@ apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion 34
+    namespace "com.google.mlkit.vision.demo"
 
     defaultConfig {
         applicationId "com.google.mlkit.vision.demo"
-        minSdkVersion 19
+        minSdkVersion 21
         multiDexEnabled true
         targetSdkVersion 34
 
@@ -34,9 +35,13 @@ android {
         testBuildType "debug"
     }
 
+    buildFeatures {
+        buildConfig true
+    }
+
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     // Do NOT compress tflite model files (need to call out to developers!)
@@ -121,7 +126,7 @@ dependencies {
 
     // Subject Segmentation
     implementation 'com.google.android.gms:play-services-mlkit-subject-segmentation:16.0.0-beta1'
-
+    implementation 'org.opencv:opencv:4.10.0'
     // -------------------------------------------------------
 
     implementation 'com.google.code.gson:gson:2.8.6'
