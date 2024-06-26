@@ -54,6 +54,22 @@ class OpenCvDocumentDetector {
         contours.release()
     }
 
+    fun debug(foregroundMask: Array<IntArray>): Array<IntArray> {
+        maskedFrame = foregroundMask.toMat() // TODO release
+
+        Imgproc.Canny(
+            maskedFrame,
+            maskedFrame,
+            75.0,
+            200.0
+        )
+
+        Log.d("carlos", maskedFrame.toString())
+        val result = maskedFrame.toArrayList()
+        maskedFrame.release()
+        return result
+    }
+
     operator fun invoke(
         foregroundMask: Array<IntArray>,
     ): Array<IntArray>? {
@@ -74,6 +90,14 @@ class OpenCvDocumentDetector {
 //        )
         maskedFrame = foregroundMask.toMat() // TODO release
 
+        // Blur the image to remove noise
+//        Imgproc.GaussianBlur(
+//            maskedFrame,
+//            maskedFrame,
+//            blurSize,
+//            0.0
+//        )
+
         Imgproc.Canny(
             maskedFrame,
             maskedFrame,
@@ -82,7 +106,7 @@ class OpenCvDocumentDetector {
         )
 
 //        Log.d("carlos", maskedFrame.toString())
-        maskedFrame.print("carlos")
+//        maskedFrame.print("carlos")
 
         // Dilate the image to get a thin outline of the document (??)
 //        Imgproc.dilate(
@@ -112,11 +136,11 @@ class OpenCvDocumentDetector {
             Imgproc.CHAIN_APPROX_SIMPLE
         )
 
-        contours.sortByDescending { Imgproc.contourArea(it) }
+//        contours.sortByDescending { Imgproc.contourArea(it) }
         val frameArea = maskedFrame.rows() * maskedFrame.cols()
 
         // Find the largest contour with 4 corners
-        contours.firstNotNullOfOrNull { contour ->
+        contours.map { contour ->
             val contourFloat = MatOfPoint2f()
             contour.toMatOfPoint2F(contourFloat)
 
@@ -133,18 +157,17 @@ class OpenCvDocumentDetector {
                 true
             )
 
-            Log.d(TAG, "found contour ${contourFloat.rows()} points, ${Imgproc.contourArea(contourFloat)} / $frameArea area")
-
-            if (
-                contourFloat.rows() == 4
-//                && Imgproc.contourArea(contourFloat) >= frameArea * 0.25
-            ) {
-                contourFloat
-            } else {
-                null
-            }
+//            Log.d(TAG, "found contour ${contour.rows()} points, ${Imgproc.contourArea(contour)} / $frameArea area")
+//            Log.d(TAG, "found contourFloat ${contourFloat.rows()} points, ${Imgproc.contourArea(contourFloat)} / $frameArea area")
+//            contourFloat.print(TAG)
+            contourFloat
         }
+            .sortedByDescending { Imgproc.contourArea(it) }
+            .firstOrNull()
+//            .firstOrNull { it.rows() == 4 }
             ?.let { screenContour ->
+                Log.d(TAG, "found screenContour ${screenContour.rows()} points, ${Imgproc.contourArea(screenContour)} / $frameArea area")
+//                screenContour.print(TAG)
                 screenContour.toMatOfPoint(contour)
 
                 currentContour = contour
@@ -154,6 +177,7 @@ class OpenCvDocumentDetector {
             }
 
         contours.release()
+        maskedFrame.release()
         isProcessing = false
         return currentContour?.toArrayList()
     }

@@ -9,7 +9,7 @@ import org.opencv.core.MatOfPoint
 import org.opencv.core.MatOfPoint2f
 
 fun Mat.toMatOfPoint(dst: MatOfPoint) {
-    convertTo(dst, CvType.CV_32S)
+    convertTo(dst, CvType.CV_32SC2)
 }
 
 fun Mat.toMatOfPoint2F(dst: MatOfPoint2f) {
@@ -34,14 +34,14 @@ fun hypotenuse(a: Float, b: Float): Float =
 fun Array<IntArray>.toMat(): Mat {
     val cols = size
     val rows = first().size
-    val mat = Mat(rows, cols, CvType.CV_8UC1)
+    val mat = Mat(cols, rows, CvType.CV_8UC1)
 
     (0 until cols).forEach { x ->
         val col = this[x]
 
         (0 until rows).forEach { y ->
             val byteArray = byteArrayOf(col[y].toByte())
-            mat.put(x, y, byteArray)
+            mat.put(y, x, byteArray)
         }
     }
 
@@ -61,9 +61,38 @@ fun Mat.print(tag: String) {
     }
 }
 
+fun MatOfPoint2f.print(tag: String) {
+    val floatArray = floatArrayOf(0f, 0f)
+    val string = StringBuilder()
+
+    (0 until cols()).forEach { x ->
+        (0 until rows()).forEach { y ->
+            get(x, y, floatArray)
+            string.append("(${floatArray[0]}, ${floatArray[1]}) ")
+        }
+    }
+    Log.d(tag, string.toString())
+}
+
+fun Mat.toArrayList(): Array<IntArray> {
+    val result = arrayListOf<IntArray>()
+    val byteArray = byteArrayOf(0)
+
+    (0 until rows()).forEach { x ->
+        val col = IntArray(cols())
+        result.add(col)
+        (0 until cols()).forEach { y ->
+            get(x, y, byteArray)
+            col[y] = if (byteArray[0].toInt() != 0) 255 else 0
+        }
+    }
+
+    return result.toTypedArray()
+}
+
 
 fun MatOfPoint.toArrayList(): Array<IntArray> {
-    return (0 until rows()).map { row ->
-        intArrayOf(0, 0).apply { get(row, 0, this) }
+    return (0 until rows()).map { x ->
+        intArrayOf(0, 0).apply { get(x, 0, this) }
     }.toTypedArray()
 }

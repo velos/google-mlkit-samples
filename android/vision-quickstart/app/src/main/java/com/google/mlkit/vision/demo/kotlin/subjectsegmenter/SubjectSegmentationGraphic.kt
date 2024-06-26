@@ -20,10 +20,12 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.Paint
 import android.os.Build
 import android.util.Log
 import androidx.annotation.ColorInt
 import androidx.annotation.RequiresApi
+import androidx.core.graphics.withMatrix
 import com.google.common.math.DoubleMath.roundToInt
 import com.google.mlkit.vision.demo.GraphicOverlay
 import com.google.mlkit.vision.demo.kotlin.subjectsegmenter.opencv.OpenCvDocumentDetector
@@ -45,39 +47,76 @@ class SubjectSegmentationGraphic(
   imageHeight: Int
 ) : GraphicOverlay.Graphic(overlay) {
   private val colorMask: IntArray
-//  private val contourPoints: Array<IntArray>
+  private val contourPoints: FloatArray
 
   private val imageWidth: Int
   private val imageHeight: Int
   private val isRawSizeMaskEnabled: Boolean
   private val scaleX: Float
   private val scaleY: Float
+  private val paint = Paint().apply {
+    color = Color.RED
+    strokeWidth = 10f
+  }
 
   /** Draws the segmented background on the supplied canvas. */
   override fun draw(canvas: Canvas) {
     val bitmap =
       Bitmap.createBitmap(
         colorMask,
-//        contourPointsToBitmapMask(contourPoints),
+//        IntArray(imageWidth * imageHeight),
         imageWidth,
         imageHeight,
         Bitmap.Config.ARGB_8888
       )
+
+    val matrix = Matrix(getTransformationMatrix())
     if (isRawSizeMaskEnabled) {
-      val matrix = Matrix(getTransformationMatrix())
       matrix.preScale(scaleX, scaleY)
-      canvas.drawBitmap(bitmap, matrix, null)
-    } else {
-      canvas.drawBitmap(bitmap, getTransformationMatrix(), null)
+//      canvas.drawBitmap(bitmap, matrix, null)
+//    } else {
+//      canvas.drawBitmap(bitmap, getTransformationMatrix(), null)
     }
+    canvas.drawBitmap(bitmap, matrix, null)
+    canvas.withMatrix(matrix) {
+//      drawPoints(contourPoints, paint)
+      drawLines(contourPoints, paint)
+    }
+
     bitmap.recycle()
   }
 
-  private fun detectContours(subjectMask: Array<IntArray>): Array<IntArray> {
+  private fun detectContours(subjectMask: Array<IntArray>): FloatArray {
     val contourPoints = openCvDocumentDetector(subjectMask) ?: emptyArray()
+
+    Log.d(TAG, "image: $imageWidth x $imageHeight mask: ${subjectMask.size} x ${subjectMask.first().size}")
     Log.d(TAG, "contourPoints: ${contourPoints.joinToString { "(${it[0]}, ${it[1]})" }}")
 
-    return contourPoints
+    val lines = FloatArray(contourPoints.size * 4)
+
+    if (contourPoints.size > 1) {
+      var index = 0
+      contourPoints.forEachIndexed { i, ints ->
+        lines[index] = ints[0].toFloat()
+        index++
+        lines[index] = ints[1].toFloat()
+        index++
+
+        if (i > 0) {
+          lines[index] = ints[0].toFloat()
+          index++
+          lines[index] = ints[1].toFloat()
+          index++
+        }
+      }
+      lines[index] = contourPoints[0][0].toFloat()
+      index++
+      lines[index] = contourPoints[0][1].toFloat()
+      index++
+
+      Log.d(TAG, "lines: ${lines.joinToString()}")
+    }
+    return lines
   }
 
   private fun getSubjectMask(confidenceMask: FloatBuffer): Array<IntArray> {
@@ -88,7 +127,8 @@ class SubjectSegmentationGraphic(
     for (y in 0 until imageHeight) {
       for (x in 0 until imageWidth) {
         val confidence = confidenceMask.get()
-        foregroundMask[x][y] = if (confidence > 0.3) 255 else 0//(confidence * 255).roundToInt()
+//        foregroundMask[x][y] = (confidence * 255).roundToInt()
+        foregroundMask[x][y] = if (confidence > 0.3) 255 else 0
       }
     }
 
@@ -115,8 +155,8 @@ class SubjectSegmentationGraphic(
     val array = IntArray(imageWidth * imageHeight)
 
     contourPoints.forEach { point ->
-      val index = point[0] * imageHeight + point[1]
-      array[index] = Color.argb(128, 255, 0, 0)
+      val index = point[0] * imageWidth + point[1]
+      array[index] = Color.argb(255, 255, 0, 0)
     }
 
     return array
@@ -145,14 +185,16 @@ class SubjectSegmentationGraphic(
     scaleX = overlay.imageWidth * 1f / imageWidth
     scaleY = overlay.imageHeight * 1f / imageHeight
 
-//    val subjectMask = getSubjectMask(segmentationResult.foregroundConfidenceMask!!)
-//    contourPoints = detectContours(subjectMask)
-    colorMask = edgeDetector.detect(
-      imageWidth,
-      imageHeight,
-      imageWidth,
-      segmentationResult.foregroundConfidenceMask!!
-    )//maskColorsFromFloatBuffer(subjectMask)
+    val subjectMask = getSubjectMask(segmentationResult.foregroundConfidenceMask!!)
+    contourPoints = detectContours(subjectMask)
+//    colorMask = edgeDetector.detect(
+//      imageWidth,
+//      imageHeight,
+//      imageWidth,
+//      segmentationResult.foregroundConfidenceMask!!
+//    )
+//      colorMask = maskColorsFromFloatBuffer(openCvDocumentDetector.debug(subjectMask))
+    colorMask = maskColorsFromFloatBuffer(subjectMask)
   }
 
   companion object {
