@@ -24,6 +24,7 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.ColorInt
 import androidx.annotation.RequiresApi
+import com.google.common.math.DoubleMath.roundToInt
 import com.google.mlkit.vision.demo.GraphicOverlay
 import com.google.mlkit.vision.demo.kotlin.subjectsegmenter.opencv.OpenCvDocumentDetector
 import com.google.mlkit.vision.segmentation.subject.Subject
@@ -85,7 +86,8 @@ class SubjectSegmentationGraphic(
 
     for (y in 0 until imageHeight) {
       for (x in 0 until imageWidth) {
-        foregroundMask[x][y] = (confidenceMask.get() * 255).roundToInt()
+        val confidence = confidenceMask.get()
+        foregroundMask[x][y] = if (confidence > 0.3) 255 else 0//(confidence * 255).roundToInt()
       }
     }
 
@@ -123,10 +125,8 @@ class SubjectSegmentationGraphic(
    * Converts [FloatBuffer] floats from all subjects to ColorInt array that can be used as a mask.
    */
   @ColorInt
-  private fun maskColorsFromFloatBuffer(confidenceMask: FloatBuffer): IntArray {
-    val colorArray = convertForegroundMaskToColorMask(
-      getSubjectMask(confidenceMask)
-    )
+  private fun maskColorsFromFloatBuffer(subjectMask: Array<IntArray>): IntArray {
+    val colorArray = convertForegroundMaskToColorMask(subjectMask)
 
     colorArray.forEachIndexed { index, i ->
       colorArray[index] = Color.argb(i, 255, 255, 0)
@@ -144,10 +144,9 @@ class SubjectSegmentationGraphic(
     scaleX = overlay.imageWidth * 1f / imageWidth
     scaleY = overlay.imageHeight * 1f / imageHeight
 
-    contourPoints = detectContours(
-      getSubjectMask(segmentationResult.foregroundConfidenceMask!!)
-    )
-    colorMask = maskColorsFromFloatBuffer(segmentationResult.foregroundConfidenceMask!!)
+    val subjectMask = getSubjectMask(segmentationResult.foregroundConfidenceMask!!)
+    contourPoints = detectContours(subjectMask)
+    colorMask = maskColorsFromFloatBuffer(subjectMask)
   }
 
   companion object {

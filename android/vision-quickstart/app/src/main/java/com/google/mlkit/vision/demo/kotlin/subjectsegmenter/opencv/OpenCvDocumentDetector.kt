@@ -16,7 +16,7 @@ import org.opencv.imgproc.Imgproc
 
 class OpenCvDocumentDetector {
     companion object {
-        private const val TAG = "OpenCvDocumentDetector"
+        private const val TAG = "SubjectSegmentationGfx"
     }
 
     // Temporary data structures to be re-used for performance purposes
@@ -24,10 +24,12 @@ class OpenCvDocumentDetector {
     private lateinit var hierarchy: Mat
 
     private lateinit var contour: MatOfPoint
+    private lateinit var kernel: Mat
 
     private val contours = mutableListOf<MatOfPoint>()
 
     private var currentContour: MatOfPoint? = null
+    private val blurSize = Size(5.0, 5.0)
 
     private var isProcessing = false
 
@@ -35,11 +37,16 @@ class OpenCvDocumentDetector {
         maskedFrame = Mat()
         hierarchy = Mat()
         contour = MatOfPoint()
+        kernel = Imgproc.getStructuringElement(
+            Imgproc.MORPH_ELLIPSE,
+            blurSize
+        )
     }
 
     fun release() {
         maskedFrame.release()
         hierarchy.release()
+        kernel.release()
 
         contour.release()
         currentContour = null
@@ -50,8 +57,6 @@ class OpenCvDocumentDetector {
     operator fun invoke(
         foregroundMask: Array<IntArray>,
     ): Array<IntArray>? {
-        maskedFrame = foregroundMask.toMat()
-
         if (isProcessing) {
             Log.d(TAG, "dropped frame")
             return currentContour?.toArrayList()
@@ -67,6 +72,7 @@ class OpenCvDocumentDetector {
 //            0.5,
 //            0.5
 //        )
+        maskedFrame = foregroundMask.toMat() // TODO release
 
         Imgproc.Canny(
             maskedFrame,

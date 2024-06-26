@@ -1,5 +1,6 @@
 package com.google.mlkit.vision.demo.kotlin.subjectsegmenter.opencv
 
+import android.util.Log
 import kotlin.math.pow
 import kotlin.math.sqrt
 import org.opencv.core.CvType
@@ -35,15 +36,29 @@ fun Array<IntArray>.toMat(): Mat {
     val rows = first().size
     val mat = Mat(rows, cols, CvType.CV_8UC1)
 
-    (0 until cols).forEach { y ->
-        val col = this[y]
-        (0 until rows).forEach { x ->
-            val byteArray = byteArrayOf(col[x].toByte())
+    (0 until cols).forEach { x ->
+        val col = this[x]
+
+        (0 until rows).forEach { y ->
+            val byteArray = byteArrayOf(col[y].toByte())
             mat.put(x, y, byteArray)
         }
     }
 
     return mat
+}
+
+fun Mat.print(tag: String) {
+    val byteArray = byteArrayOf(0)
+
+    (0 until rows()).forEach { y ->
+        val string = StringBuilder("$y: ")
+        (0 until cols()).forEach { x ->
+            get(x, y, byteArray)
+            string.append(byteArray[0].toInt()).append(" ")
+        }
+        Log.d(tag, string.toString())
+    }
 }
 
 
