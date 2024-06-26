@@ -38,13 +38,14 @@ import kotlin.math.roundToInt
 @RequiresApi(Build.VERSION_CODES.N)
 class SubjectSegmentationGraphic(
   private val openCvDocumentDetector: OpenCvDocumentDetector,
+  private val edgeDetector: EdgeDetector,
   overlay: GraphicOverlay,
   segmentationResult: SubjectSegmentationResult,
   imageWidth: Int,
   imageHeight: Int
 ) : GraphicOverlay.Graphic(overlay) {
   private val colorMask: IntArray
-  private val contourPoints: Array<IntArray>
+//  private val contourPoints: Array<IntArray>
 
   private val imageWidth: Int
   private val imageHeight: Int
@@ -144,9 +145,14 @@ class SubjectSegmentationGraphic(
     scaleX = overlay.imageWidth * 1f / imageWidth
     scaleY = overlay.imageHeight * 1f / imageHeight
 
-    val subjectMask = getSubjectMask(segmentationResult.foregroundConfidenceMask!!)
-    contourPoints = detectContours(subjectMask)
-    colorMask = maskColorsFromFloatBuffer(subjectMask)
+//    val subjectMask = getSubjectMask(segmentationResult.foregroundConfidenceMask!!)
+//    contourPoints = detectContours(subjectMask)
+    colorMask = edgeDetector.detect(
+      imageWidth,
+      imageHeight,
+      imageWidth,
+      segmentationResult.foregroundConfidenceMask!!
+    )//maskColorsFromFloatBuffer(subjectMask)
   }
 
   companion object {

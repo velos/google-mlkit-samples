@@ -35,6 +35,7 @@ import com.google.mlkit.vision.segmentation.subject.SubjectSegmenterOptions
 class SubjectSegmenterProcessor : VisionProcessorBase<SubjectSegmentationResult> {
   private val subjectSegmenter: SubjectSegmenter
   private val openCvDocumentDetector: OpenCvDocumentDetector
+  private val edgeDetector: EdgeDetector
   private var imageWidth: Int = 0
   private var imageHeight: Int = 0
 
@@ -48,6 +49,7 @@ class SubjectSegmenterProcessor : VisionProcessorBase<SubjectSegmentationResult>
 
     openCvDocumentDetector = OpenCvDocumentDetector()
     openCvDocumentDetector.initialize()
+    edgeDetector = EdgeDetector()
 
     Log.d(TAG, "SubjectSegmenterProcessor created")
   }
@@ -70,6 +72,7 @@ class SubjectSegmenterProcessor : VisionProcessorBase<SubjectSegmentationResult>
     graphicOverlay.add(
       SubjectSegmentationGraphic(
         openCvDocumentDetector,
+        edgeDetector,
         graphicOverlay,
         results,
         imageWidth,

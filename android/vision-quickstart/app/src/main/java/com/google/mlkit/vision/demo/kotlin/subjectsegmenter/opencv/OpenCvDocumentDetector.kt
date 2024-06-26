@@ -81,6 +81,9 @@ class OpenCvDocumentDetector {
             200.0
         )
 
+//        Log.d("carlos", maskedFrame.toString())
+        maskedFrame.print("carlos")
+
         // Dilate the image to get a thin outline of the document (??)
 //        Imgproc.dilate(
 //            maskedFrame,
