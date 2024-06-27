@@ -13,7 +13,6 @@ class OpenCvDocumentDetector {
     }
 
     // Temporary data structures to be re-used for performance purposes
-    private lateinit var maskedFrame: Mat
     private lateinit var hierarchy: Mat
 
     private lateinit var contour: MatOfPoint
@@ -27,7 +26,6 @@ class OpenCvDocumentDetector {
     private var isProcessing = false
 
     fun initialize() {
-        maskedFrame = Mat()
         hierarchy = Mat()
         contour = MatOfPoint()
         kernel = Imgproc.getStructuringElement(
@@ -37,7 +35,6 @@ class OpenCvDocumentDetector {
     }
 
     fun release() {
-        maskedFrame.release()
         hierarchy.release()
         kernel.release()
 
@@ -47,35 +44,19 @@ class OpenCvDocumentDetector {
         contours.release()
     }
 
-    // Temporary code to debug the result of individual steps in the OpenCV pipeline.
-    // This returns a 2D mask of the result of Canny (OpenCV's edge detection).
-    fun debug(foregroundMask: Array<IntArray>): Array<IntArray> {
-        maskedFrame = foregroundMask.toMat()
-
-        Imgproc.Canny(
-            maskedFrame,
-            maskedFrame,
-            75.0,
-            200.0
-        )
-
-        Log.d("carlos", maskedFrame.toString())
-        val result = maskedFrame.to2D()
-        maskedFrame.release()
-        return result
-    }
-
-    operator fun invoke(
-        foregroundMask: Array<IntArray>,
-    ): Array<IntArray>? {
+    fun detect(
+        foregroundMask: IntArray,
+        width: Int,
+        height: Int
+    ): FloatArray {
         if (isProcessing) {
             Log.d(TAG, "dropped frame")
-            return currentContour?.to2D()
+            return currentContour?.toFloatArray() ?: floatArrayOf()
         }
 
         isProcessing = true
 
-        maskedFrame = foregroundMask.toMat()
+        val maskedFrame = foregroundMask.toMat(width, height)
 
 //        Imgproc.Canny(
 //            maskedFrame,
@@ -122,8 +103,8 @@ class OpenCvDocumentDetector {
 //            contourFloat.print(TAG)
             contourFloat
         }
-            .sortedByDescending { Imgproc.contourArea(it) }
-            .firstOrNull()
+            .maxByOrNull { Imgproc.contourArea(it) }
+//            .sortedByDescending { Imgproc.contourArea(it) }
 //            .firstOrNull { it.rows() == 4 }
             ?.let { screenContour ->
                 Log.d(TAG, "found screenContour ${screenContour.rows()} points, ${Imgproc.contourArea(screenContour)} / $frameArea area")
@@ -139,6 +120,6 @@ class OpenCvDocumentDetector {
         contours.release()
         maskedFrame.release()
         isProcessing = false
-        return currentContour?.to2D()
+        return currentContour?.toFloatArray() ?: floatArrayOf()
     }
 }

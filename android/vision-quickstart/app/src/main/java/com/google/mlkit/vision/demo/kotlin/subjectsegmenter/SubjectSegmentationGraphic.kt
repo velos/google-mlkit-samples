@@ -23,19 +23,11 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.os.Build
 import android.util.Log
-import androidx.annotation.ColorInt
 import androidx.annotation.RequiresApi
 import androidx.core.graphics.withMatrix
-import com.google.common.math.DoubleMath.roundToInt
 import com.google.mlkit.vision.demo.GraphicOverlay
 import com.google.mlkit.vision.demo.kotlin.subjectsegmenter.opencv.OpenCvDocumentDetector
-import com.google.mlkit.vision.demo.kotlin.subjectsegmenter.opencv.to2D
-import com.google.mlkit.vision.segmentation.subject.Subject
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmentationResult
-import java.nio.FloatBuffer
-import kotlin.collections.List
-import kotlin.math.min
-import kotlin.math.roundToInt
 
 /** Draw the mask from [SubjectSegmentationResult] in preview. */
 @RequiresApi(Build.VERSION_CODES.N)
@@ -78,39 +70,9 @@ class SubjectSegmentationGraphic(
     canvas.drawBitmap(bitmap, matrix, null)
     canvas.withMatrix(matrix) {
       drawPoints(contourPoints, paint)
-//      drawLines(contourPoints, paint)
     }
 
     bitmap.recycle()
-  }
-
-  private fun convertContourPointsToLines(contourPoints: Array<IntArray>): FloatArray {
-    val lines = FloatArray(contourPoints.size * 4)
-
-    if (contourPoints.size > 1) {
-      var index = 0
-      contourPoints.forEachIndexed { i, ints ->
-        lines[index] = ints[0].toFloat()
-        index++
-        lines[index] = ints[1].toFloat()
-        index++
-
-        if (i > 0) {
-          lines[index] = ints[0].toFloat()
-          index++
-          lines[index] = ints[1].toFloat()
-          index++
-        }
-      }
-      lines[index] = contourPoints[0][0].toFloat()
-      index++
-      lines[index] = contourPoints[0][1].toFloat()
-      index++
-
-      Log.d(TAG, "lines: ${lines.joinToString()}")
-    }
-
-    return lines
   }
 
   init {
@@ -129,25 +91,21 @@ class SubjectSegmentationGraphic(
       segmentationResult.foregroundConfidenceMask!!
     )
 
-    contourPoints = convertContourPointsToLines(
-      openCvDocumentDetector(
-        edgeMask.to2D(imageWidth, imageHeight)
-      ) ?: emptyArray()
-    )
-
-    // Debug code to show the result of OpenCV Canny operation
-//    val subjectMask = openCvDocumentDetector.debug(
-//      segmentationResult.foregroundConfidenceMask!!
-//        .toIntArray(imageWidth, imageHeight)
-//        .to2D(imageWidth, imageHeight)
-//    )
-//    colorMask = openCvDocumentDetector
-//      .debug(subjectMask)
-//      .toIntArray(imageWidth, imageHeight)
+    contourPoints = openCvDocumentDetector.detect(
+        edgeMask,
+        imageWidth,
+        imageHeight
+      )
 
     colorMask = edgeMask
 
-    colorMask.toColor()
+    convertToColorArray(colorMask)
+  }
+
+  private fun convertToColorArray(mask: IntArray) {
+    mask.forEachIndexed { index, i ->
+      mask[index] = Color.argb(i, 255, 0, 0)
+    }
   }
 
   companion object {

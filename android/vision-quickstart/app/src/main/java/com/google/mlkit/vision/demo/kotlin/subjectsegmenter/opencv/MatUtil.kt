@@ -31,63 +31,36 @@ fun hypotenuse(a: Double, b: Double): Double =
 fun hypotenuse(a: Float, b: Float): Float =
     sqrt(a.pow(2) + b.pow(2))
 
-fun Array<IntArray>.toMat(): Mat {
-    val cols = size
-    val rows = first().size
-    val mat = Mat(cols, rows, CvType.CV_8UC1)
-
-    (0 until cols).forEach { x ->
-        val col = this[x]
-
-        (0 until rows).forEach { y ->
-            val byteArray = byteArrayOf(col[y].toByte())
-            mat.put(y, x, byteArray)
-        }
-    }
-
-    return mat
-}
-
-fun Mat.to2D(): Array<IntArray> {
-    val result = arrayListOf<IntArray>()
-    (0 until rows()).forEach { y ->
-        result.add(IntArray(cols()))
-    }
-
-    val byteArray = byteArrayOf(0)
-
-    (0 until cols()).forEach { y ->
-        (0 until rows()).forEach { x ->
-            get(y, x, byteArray)
-            result[x][y] = byteArray[0].toInt() //if (byteArray[0].toInt() != 0) 255 else 0
-        }
-    }
-
-    return result.toTypedArray()
-}
-
-
-fun MatOfPoint.to2D(): Array<IntArray> {
-    return (0 until rows()).map { x ->
-        intArrayOf(0, 0).apply { get(x, 0, this) }
-    }.toTypedArray()
-}
-
-fun IntArray.to2D(width: Int, height: Int): Array<IntArray> {
+fun MatOfPoint.toFloatArray(): FloatArray {
+    val result = FloatArray(rows() * 2)
+    val intArray = intArrayOf(0, 0)
     var index = 0
-    val result = arrayListOf<IntArray>()
-    (0 until width).forEach { x ->
-        result.add(IntArray(height))
+
+    (0 until rows()).map { x ->
+        get(x, 0, intArray)
+        result[index] = intArray[0].toFloat()
+        result[index + 1] = intArray[1].toFloat()
+        index += 2
     }
+
+    return result
+}
+
+fun IntArray.toMat(
+    width: Int,
+    height: Int
+): Mat {
+    val result = Mat(height, width, CvType.CV_8UC1)
+    var index = 0
 
     (0 until height).forEach { y ->
         (0 until width).forEach { x ->
-            result[x][y] = this[index]
+            result.put(y, x, byteArrayOf(this[index].toByte()))
             index++
         }
     }
 
-    return result.toTypedArray()
+    return result
 }
 
 fun Mat.print(tag: String) {
