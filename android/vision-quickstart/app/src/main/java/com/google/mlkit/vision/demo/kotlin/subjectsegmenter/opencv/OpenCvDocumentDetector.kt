@@ -1,16 +1,9 @@
 package com.google.mlkit.vision.demo.kotlin.subjectsegmenter.opencv
 
 import android.util.Log
-import kotlin.math.max
-import kotlin.math.pow
-import kotlin.math.sqrt
-import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.core.MatOfPoint
 import org.opencv.core.MatOfPoint2f
-import org.opencv.core.Point
-import org.opencv.core.Rect
-import org.opencv.core.Scalar
 import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
 
@@ -54,8 +47,10 @@ class OpenCvDocumentDetector {
         contours.release()
     }
 
+    // Temporary code to debug the result of individual steps in the OpenCV pipeline.
+    // This returns a 2D mask of the result of Canny (OpenCV's edge detection).
     fun debug(foregroundMask: Array<IntArray>): Array<IntArray> {
-        maskedFrame = foregroundMask.toMat() // TODO release
+        maskedFrame = foregroundMask.toMat()
 
         Imgproc.Canny(
             maskedFrame,
@@ -65,7 +60,7 @@ class OpenCvDocumentDetector {
         )
 
         Log.d("carlos", maskedFrame.toString())
-        val result = maskedFrame.toArrayList()
+        val result = maskedFrame.to2D()
         maskedFrame.release()
         return result
     }
@@ -75,28 +70,12 @@ class OpenCvDocumentDetector {
     ): Array<IntArray>? {
         if (isProcessing) {
             Log.d(TAG, "dropped frame")
-            return currentContour?.toArrayList()
+            return currentContour?.to2D()
         }
 
         isProcessing = true
 
-        // Resize frame
-//        Imgproc.resize(
-//            frame,
-//            resizedFrame,
-//            zeroSize,
-//            0.5,
-//            0.5
-//        )
-        maskedFrame = foregroundMask.toMat() // TODO release
-
-        // Blur the image to remove noise
-//        Imgproc.GaussianBlur(
-//            maskedFrame,
-//            maskedFrame,
-//            blurSize,
-//            0.0
-//        )
+        maskedFrame = foregroundMask.toMat()
 
 //        Imgproc.Canny(
 //            maskedFrame,
@@ -108,25 +87,7 @@ class OpenCvDocumentDetector {
 //        Log.d("carlos", maskedFrame.toString())
 //        maskedFrame.print("carlos")
 
-        // Dilate the image to get a thin outline of the document (??)
-//        Imgproc.dilate(
-//            maskedFrame,
-//            maskedFrame,
-//            kernel
-//        )
-
         // Find edge contours
-
-//        var maxVal: Int = 0
-//        for (i in 0 until maskedFrame.rows()) {
-//            for (j in 0 until maskedFrame.cols()) {
-//                val result = byteArrayOf(0)
-//                maskedFrame.get(i, j, result)
-//                maxVal = max(maxVal, result[0].toInt())
-//            }
-//        }
-//
-//        Log.d(TAG, "maxVal $maxVal")
 
         Imgproc.findContours(
             maskedFrame,
@@ -136,7 +97,6 @@ class OpenCvDocumentDetector {
             Imgproc.CHAIN_APPROX_SIMPLE
         )
 
-//        contours.sortByDescending { Imgproc.contourArea(it) }
         val frameArea = maskedFrame.rows() * maskedFrame.cols()
 
         // Find the largest contour with 4 corners
@@ -179,6 +139,6 @@ class OpenCvDocumentDetector {
         contours.release()
         maskedFrame.release()
         isProcessing = false
-        return currentContour?.toArrayList()
+        return currentContour?.to2D()
     }
 }

@@ -4,6 +4,8 @@ import android.graphics.Color
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 
+// From:
+// https://github.com/google-ar/arcore-android-sdk/blob/master/samples/computervision_java/app/src/main/java/com/google/ar/core/examples/java/computervision/EdgeDetector.java
 /** Detects edges from input YUV image.  */
 class EdgeDetector {
     private var inputPixels = FloatArray(0) // Reuse java byte array to avoid multiple allocations.
