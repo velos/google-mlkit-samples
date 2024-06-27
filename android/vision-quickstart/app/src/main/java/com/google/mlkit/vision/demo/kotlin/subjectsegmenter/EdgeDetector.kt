@@ -67,7 +67,7 @@ class EdgeDetector {
                 val ySum = a00 + (2 * a01) + a02 - a20 - (2 * a21) - a22
 
                 if ((xSum * xSum) + (ySum * ySum) > SOBEL_EDGE_THRESHOLD) {
-                    outputPixels[j * width + i] = Color.argb(255, 255, 0, 0)//0xFF
+                    outputPixels[j * width + i] = 255//Color.argb(255, 255, 0, 0)//0xFF
                 } else {
                     outputPixels[j * width + i] = 0//0x1F
                 }

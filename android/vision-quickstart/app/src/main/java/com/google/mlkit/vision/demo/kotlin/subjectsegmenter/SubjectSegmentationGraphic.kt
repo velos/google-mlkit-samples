@@ -29,6 +29,7 @@ import androidx.core.graphics.withMatrix
 import com.google.common.math.DoubleMath.roundToInt
 import com.google.mlkit.vision.demo.GraphicOverlay
 import com.google.mlkit.vision.demo.kotlin.subjectsegmenter.opencv.OpenCvDocumentDetector
+import com.google.mlkit.vision.demo.kotlin.subjectsegmenter.opencv.to2D
 import com.google.mlkit.vision.segmentation.subject.Subject
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmentationResult
 import java.nio.FloatBuffer
@@ -79,8 +80,8 @@ class SubjectSegmentationGraphic(
     }
     canvas.drawBitmap(bitmap, matrix, null)
     canvas.withMatrix(matrix) {
-//      drawPoints(contourPoints, paint)
-      drawLines(contourPoints, paint)
+      drawPoints(contourPoints, paint)
+//      drawLines(contourPoints, paint)
     }
 
     bitmap.recycle()
@@ -186,15 +187,16 @@ class SubjectSegmentationGraphic(
     scaleY = overlay.imageHeight * 1f / imageHeight
 
     val subjectMask = getSubjectMask(segmentationResult.foregroundConfidenceMask!!)
-    contourPoints = detectContours(subjectMask)
-//    colorMask = edgeDetector.detect(
-//      imageWidth,
-//      imageHeight,
-//      imageWidth,
-//      segmentationResult.foregroundConfidenceMask!!
-//    )
+    colorMask = maskColorsFromFloatBuffer(openCvDocumentDetector.debug(subjectMask))
+    val edgeMask = edgeDetector.detect(
+      imageWidth,
+      imageHeight,
+      imageWidth,
+      segmentationResult.foregroundConfidenceMask!!
+    ).to2D(imageWidth, imageHeight)
+    contourPoints = detectContours(edgeMask)
 //      colorMask = maskColorsFromFloatBuffer(openCvDocumentDetector.debug(subjectMask))
-    colorMask = maskColorsFromFloatBuffer(subjectMask)
+//    colorMask = maskColorsFromFloatBuffer(edgeMask)
   }
 
   companion object {

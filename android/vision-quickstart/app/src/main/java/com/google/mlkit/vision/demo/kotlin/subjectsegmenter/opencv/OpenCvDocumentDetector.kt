@@ -98,12 +98,12 @@ class OpenCvDocumentDetector {
 //            0.0
 //        )
 
-        Imgproc.Canny(
-            maskedFrame,
-            maskedFrame,
-            75.0,
-            200.0
-        )
+//        Imgproc.Canny(
+//            maskedFrame,
+//            maskedFrame,
+//            75.0,
+//            200.0
+//        )
 
 //        Log.d("carlos", maskedFrame.toString())
 //        maskedFrame.print("carlos")

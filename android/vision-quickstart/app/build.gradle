@@ -29,7 +29,9 @@ android {
         }
         debug {
             isDefault true
+            debuggable true
             minifyEnabled false
+            shrinkResources false
             proguardFiles 'proguard-rules.pro'
         }
         testBuildType "debug"

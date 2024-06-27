@@ -76,14 +76,16 @@ fun MatOfPoint2f.print(tag: String) {
 
 fun Mat.toArrayList(): Array<IntArray> {
     val result = arrayListOf<IntArray>()
+    (0 until rows()).forEach { y ->
+        result.add(IntArray(cols()))
+    }
+
     val byteArray = byteArrayOf(0)
 
-    (0 until rows()).forEach { x ->
-        val col = IntArray(cols())
-        result.add(col)
-        (0 until cols()).forEach { y ->
-            get(x, y, byteArray)
-            col[y] = if (byteArray[0].toInt() != 0) 255 else 0
+    (0 until cols()).forEach { y ->
+        (0 until rows()).forEach { x ->
+            get(y, x, byteArray)
+            result[x][y] = if (byteArray[0].toInt() != 0) 255 else 0
         }
     }
 
@@ -95,4 +97,21 @@ fun MatOfPoint.toArrayList(): Array<IntArray> {
     return (0 until rows()).map { x ->
         intArrayOf(0, 0).apply { get(x, 0, this) }
     }.toTypedArray()
+}
+
+fun IntArray.to2D(width: Int, height: Int): Array<IntArray> {
+    var index = 0
+    val result = arrayListOf<IntArray>()
+    (0 until width).forEach { x ->
+        result.add(IntArray(height))
+    }
+
+    (0 until height).forEach { y ->
+        (0 until width).forEach { x ->
+            result[x][y] = this[index]
+            index++
+        }
+    }
+
+    return result.toTypedArray()
 }
