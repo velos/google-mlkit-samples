@@ -74,7 +74,7 @@ class OpenCvDocumentDetector {
             maskedFrame,
             contours,
             hierarchy,
-            Imgproc.RETR_LIST,
+            Imgproc.RETR_EXTERNAL,
             Imgproc.CHAIN_APPROX_SIMPLE
         )
 
